@@ -148,7 +148,7 @@ int main (int argc, char *argv[])
         fprintf(stderr,"%s\n\n", buff2); 
         fprintf(fp_outputFile,"%s,%s,%s,%s,%s\n",buff,vs30_1,vs30_2,vs30_3,vs30_4);
         cnt1++;
-        if ( cnt1 > 100 ) return 0;
+//        if ( cnt1 > 100 ) return 0;
         break;
       }
     }
