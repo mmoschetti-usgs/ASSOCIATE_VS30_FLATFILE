@@ -27,11 +27,14 @@ void assign_cols_stationfile(char **columns, float *staLon, float *staLat, char 
 /*--------------------------------------------------------------------------*/
 {
 //
-  staNet=strcpy(staNet,columns[1]);
-  staNm=strcpy(staNm,columns[2]);
-  *staLon=atof(columns[3]);
-  *staLat=atof(columns[4]);
-//  fprintf(stderr,"assign_cols_flatfile, year/month/day/hour/min/sec/Mag: %d %d %d %d %d %.2f %f\n", *evYear, *evMon, *evDay, *evHour, *evMin, *evSec, *evMag);
+//  staNet=strcpy(staNet,columns[1]);
+//  staNm=strcpy(staNm,columns[2]);
+  strcpy(staNet,columns[1]);
+  strcpy(staNm,columns[2]);
+  *staLon=atof(columns[6]);
+  *staLat=atof(columns[5]);
+//  fprintf(stderr,"%s %s\n", columns[3], columns[4]);
+//  fprintf(stderr,"assign_cols_stationfile, staNet/staNm/staLon/staLat: %s %s %f %f\n", staNet, staNm, *staLon, *staLat);
 
 }
 
@@ -48,7 +51,9 @@ void assign_cols_vs30file(char **columns, float *lon, float *lat, char *network,
   vs30_2=strcpy(vs30_2,columns[7]);
   vs30_3=strcpy(vs30_3,columns[8]);
   vs30_4=strcpy(vs30_4,columns[9]);
-//  fprintf(stderr,"assign_cols_catalog, year/month/day/hour/min/sec/Mag/MagSource/MagString: %d %d %d %d %d %.2f %f %f %s\n", *evYear, *evMon, *evDay, *evHour, *evMin, *evSec, *evMag, *evMagSource, magString);
+//  fprintf(stderr,"assign_cols_vs30file, network/name: %s %s\n", network, name);
+//  fprintf(stderr,"assign_cols_vs30file, lon/lat: %f %f\n", *lon, *lat);
+//  fprintf(stderr,"assign_cols_vs30file, vs30: %s %s %s %s\n", vs30_1, vs30_2, vs30_3, vs30_4);
 
 }
 
@@ -93,10 +98,13 @@ int main (int argc, char *argv[])
     fprintf(stderr,"Could not open station list from flatfile, %s\n", stationFlatFile);
     exit(0);
   }
+  fprintf(stderr,"Opened station list from flatfile, %s\n", stationFlatFile);
+//
   if ((fp_vs30File = fopen(vs30File, "r")) == NULL) {
     fprintf(stderr,"Could not open EMT vs30 file, %s\n", vs30File);
     exit(0);
   }
+  fprintf(stderr,"Opened EMT vs30 file, %s\n", vs30File);
   fp_outputFile = fopen(outputFile, "w");
 
 // READ/APPEND EVENT-FLATFILE
@@ -104,9 +112,12 @@ int main (int argc, char *argv[])
   hlines=1;
   for (cnt1=0; cnt1<hlines; cnt1++) {
     fgets(buff,BUFFLEN,fp_stationFlatFile);
-    fprintf(fp_outputFile,"%s",buff);
+    buff[strcspn(buff, "\r\n")] = 0;
+    fprintf(fp_outputFile,"%s,Slope.Vs30,Parker,Hosseini,Zalachoris\n",buff);
   }
   cnt1=0;
+// header line from vs30 file
+  fgets(buff2,BUFFLEN,fp_vs30File);
 // loop over lines from station file
   while( fgets(buff,BUFFLEN,fp_stationFlatFile) ) {
     if ( strlen(buff) > BUFFLEN ) {
@@ -117,11 +128,10 @@ int main (int argc, char *argv[])
 //     
     columns = NULL;
     cols_found = getcols(buff, delim, &columns);
-//void assign_cols_stationfile(char **columns, float *staLon, float *staLat, char *staNet, char *staNm);
-//void assign_cols_vs30file(char **columns, float *lon, float *lat, char *network, char *name);
+//fprintf(stderr,"buff: %s\n", buff);
+//fprintf(stderr,"columns: %s\n", columns[0]);
     assign_cols_stationfile(columns, &staLon, &staLat, staNet, staNm);
     free(columns);
-//    epochTimeFlatFile=compute_epochTime(evYear,evMon,evDay,evHour,evMin,(int)evSec);
 // read through vs30 file until match input event from flatfile
     while( fgets(buff2,BUFFLEN,fp_vs30File) ) {
       buff2[strcspn(buff2, "\r\n")] = 0;
@@ -129,17 +139,16 @@ int main (int argc, char *argv[])
       cols_found = getcols(buff2, delim, &columns2);
       assign_cols_vs30file(columns2, &lon, &lat, network, name, vs30_1, vs30_2, vs30_3, vs30_4);
       free(columns2);
-//      epochTimeCatalog=compute_epochTime(evYear2,evMon2,evDay2,evHour2,evMin2,(int)evSec2);
-//      diffSec=abs(epochTimeFlatFile-epochTimeCatalog);
       delaz_(&staLat,&staLon,&lat,&lon,&dist,&az,&baz);
 //      if ( (diffMag<0.1) && (diffSec<1)) {
       if ( dist<0.01 ) {
         fprintf(stderr,"MATCH: ");
-        fprintf(stderr,"dist=%.1f\n",dist);
+        fprintf(stderr,"dist=%.1f %s %s\n",dist, staNm, name);
         fprintf(stderr,"%s\n", buff); 
         fprintf(stderr,"%s\n\n", buff2); 
         fprintf(fp_outputFile,"%s,%s,%s,%s,%s\n",buff,vs30_1,vs30_2,vs30_3,vs30_4);
-        return 0;
+        cnt1++;
+        if ( cnt1 > 100 ) return 0;
         break;
       }
     }
