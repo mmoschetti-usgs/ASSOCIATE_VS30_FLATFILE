@@ -141,7 +141,7 @@ int main (int argc, char *argv[])
       free(columns2);
       delaz_(&staLat,&staLon,&lat,&lon,&dist,&az,&baz);
 //      if ( (diffMag<0.1) && (diffSec<1)) {
-      if ( dist<0.01 ) {
+      if ((dist<0.025) && (strcmp(name,staNm)) ) {
         fprintf(stderr,"MATCH: ");
         fprintf(stderr,"dist=%.1f %s %s\n",dist, staNm, name);
         fprintf(stderr,"%s\n", buff); 
