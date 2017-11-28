@@ -65,18 +65,12 @@ int main (int argc, char *argv[])
   FILE *fp_stationFlatFile, *fp_vs30File, *fp_outputFile;
   int hlines, cnt1;
   int cols_found;
-//  int evYear, evMon, evDay, evHour, evMin;
-//  int evYear2, evMon2, evDay2, evHour2, evMin2;
-//  int epochTimeFlatFile, epochTimeCatalog; 
-//  int diffSec;
-//  float evMag, evMag2, evSec, evSec2, evMagSource;
+  int matchSta=0;
   float staLon, staLat, lon, lat;
   float az, baz, dist;
-//  float diffMag;
   char vs30_1[20], vs30_2[20], vs30_3[20], vs30_4[20];
   char network[5], staNet[5], name[5], staNm[5];
   char stationFlatFile[200], vs30File[200], outputFile[200];
-//  char magString[20];
   char buff[BUFFLEN], buff2[BUFFLEN];
   char **columns;
   char **columns2;
@@ -140,8 +134,15 @@ int main (int argc, char *argv[])
       assign_cols_vs30file(columns2, &lon, &lat, network, name, vs30_1, vs30_2, vs30_3, vs30_4);
       free(columns2);
       delaz_(&staLat,&staLon,&lat,&lon,&dist,&az,&baz);
+/*
+if (dist<0.05) {
 //      if ( (diffMag<0.1) && (diffSec<1)) {
-      if ((dist<0.025) && (strcmp(name,staNm)) ) {
+fprintf(stderr,"%f\n", dist);
+fprintf(stderr,"%f %f %f %f\n", lon, lat, staLon, staLat);
+fprintf(stderr,"N1%sN1 N2%sN2\n", name, staNm);
+fprintf(stderr,"strcmp(%s,%s) %d\n", name, staNm, strcmp(name,staNm));
+} */
+      if ((dist<0.05) && (strcmp(name,staNm)==0) ) {
         fprintf(stderr,"MATCH: ");
         fprintf(stderr,"dist=%.1f %s %s\n",dist, staNm, name);
         fprintf(stderr,"%s\n", buff); 
@@ -149,9 +150,12 @@ int main (int argc, char *argv[])
         fprintf(fp_outputFile,"%s,%s,%s,%s,%s\n",buff,vs30_1,vs30_2,vs30_3,vs30_4);
         cnt1++;
 //        if ( cnt1 > 100 ) return 0;
+        matchSta=1;
         break;
       }
     }
+    if ( !matchSta ) fprintf(stderr,"NO MATCH: %s\n", buff); 
+    matchSta=0;
     rewind(fp_vs30File);
   }
 
